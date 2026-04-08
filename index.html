@@ -954,22 +954,11 @@ function toggleHint(){
 function switchLevel(lk){appState.currentLevelKey=lk;renderModalContent();}
 
 function toggleStatement(exId,key){
-  const exData=getExData(exId);exData.statements[key]=!exData.statements[key];
-  const ex=getEx(exId);const curLk=appState.currentLevelKey;
-  const levelOrder=getLevelOrder(ex);
-  if(isLevelComplete(exId,curLk)){
-    const li=levelOrder.indexOf(curLk);
-    if(li<levelOrder.length-1){exData.currentLevel=levelOrder[li+1];appState.currentLevelKey=levelOrder[li+1];}
-  }
-  if(curLk==='beg'&&ex.levels.mod){
-    const chk=getCurrentLevelChecked(exId,'beg');
-    if(chk<Math.ceil(ex.levels.beg.statements.length/2)){exData.currentLevel='mod';appState.currentLevelKey='mod';}
-  }
-  if(curLk==='mod'&&ex.levels.beg){
-    const chk=getCurrentLevelChecked(exId,'mod');
-    if(chk>=Math.ceil(ex.levels.mod.statements.length/2)){exData.currentLevel='beg';appState.currentLevelKey='beg';}
-  }
-  saveState();renderModalContent();renderHeader();checkUnlocks();
+  const exData=getExData(exId);
+  exData.statements[key]=!exData.statements[key];
+  saveState();
+  renderModalContent();
+  renderHeader();
 }
 
 function closeModal(){
