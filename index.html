@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Classical Pilates</title>
+<title>Venna Pilates</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -241,12 +241,33 @@ body{font-family:'Jost',sans-serif;background:var(--cream);color:var(--text-prim
 }
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
 .exercise-card{animation:fadeIn 0.25s ease both;}
+
+  .celebrate-overlay{display:none;position:fixed;inset:0;background:rgba(44,40,32,0.6);z-index:500;align-items:center;justify-content:center;padding:1rem;}
+  .celebrate-overlay.open{display:flex;}
+  .celebrate-box{background:var(--warm-white);border-radius:20px;padding:2rem 1.5rem;max-width:340px;width:100%;box-shadow:var(--shadow-lg);text-align:center;position:relative;overflow:hidden;}
+  .celebrate-emoji{font-size:3rem;margin-bottom:0.75rem;display:block;animation:bounceIn 0.5s ease;}
+  @keyframes bounceIn{0%{transform:scale(0.3);opacity:0;}60%{transform:scale(1.15);}80%{transform:scale(0.95);}100%{transform:scale(1);opacity:1;}}
+  .celebrate-title{font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:400;color:var(--terra-dark);margin-bottom:0.4rem;}
+  .celebrate-subtitle{font-size:0.82rem;color:var(--text-secondary);margin-bottom:0.35rem;line-height:1.5;}
+  .celebrate-level{font-size:0.75rem;color:var(--text-muted);margin-bottom:1.5rem;}
+  .celebrate-actions{display:flex;flex-direction:column;gap:0.5rem;}
+  .celebrate-yes{background:var(--terra);border:none;border-radius:10px;color:white;font-family:'Jost',sans-serif;font-size:0.85rem;font-weight:500;padding:0.75rem;cursor:pointer;transition:all 0.2s;letter-spacing:0.03em;}
+  .celebrate-yes:hover{background:var(--terra-dark);transform:translateY(-1px);}
+  .celebrate-no{background:transparent;border:1px solid var(--border-strong);border-radius:10px;color:var(--text-muted);font-family:'Jost',sans-serif;font-size:0.8rem;padding:0.6rem;cursor:pointer;transition:all 0.2s;}
+  .celebrate-no:hover{background:var(--cream);}
+  .confetti-piece{position:absolute;opacity:0;animation:confettiFall 1.2s ease forwards;}
+  @keyframes confettiFall{0%{transform:translateY(-20px) rotate(0deg);opacity:1;}100%{transform:translateY(320px) rotate(360deg);opacity:0;}}
+
+  .switch-level-btn { width:100%; padding:0.5rem 1rem; border-radius:8px; border:1px solid var(--terra-light); background:var(--terra-light); color:var(--terra-dark); font-family:'Jost',sans-serif; font-size:0.72rem; letter-spacing:0.04em; cursor:pointer; transition:all 0.2s; margin-bottom:0.85rem; }
+  .switch-level-btn:hover { background:var(--terra); border-color:var(--terra); color:white; }
+  .switch-level-btn.current-level { background:var(--cream); border-color:var(--border); color:var(--text-muted); cursor:default; }
+  .switch-level-btn.current-level:hover { background:var(--cream); border-color:var(--border); color:var(--text-muted); }
 </style>
 </head>
 <body>
 <div class="app">
   <header class="header">
-    <div class="header-title">Classical <span>Pilates</span></div>
+    <div class="header-title">Venna <span>Pilates</span></div>
     <div class="header-stats">
       <div class="stat-pill"><span class="val" id="hdr-sessions">0</span><span class="lbl">Sessions</span></div>
       <div class="stat-pill"><span class="val" id="hdr-mastery">0%</span><span class="lbl">Mastery</span></div>
@@ -389,13 +410,14 @@ body{font-family:'Jost',sans-serif;background:var(--cream);color:var(--text-prim
           <div style="font-size:0.68rem;color:var(--text-muted);margin-top:3px;" id="modal-level-progress"></div>
         </div>
       </div>
-      <div class="mod-alert" id="mod-alert">Dropped to Modification — less than half of Beginner statements checked.</div>
+      <div class="mod-alert" id="mod-alert">Modification level — use this as a support tool if you're finding Beginner challenging. Return to Beginner tab anytime.</div>
       <div class="level-tabs" id="level-tabs"></div>
-      <button class="hint-toggle" onclick="toggleHint()"><span>ⓘ</span><span id="hint-toggle-label">Show instructions</span></button>
+      <button class="switch-level-btn" id="switch-level-btn" onclick="switchToCurrentBrowse()"></button>
+      <button class="hint-toggle" onclick="toggleHint()"><span>ⓘ</span><span id="hint-toggle-label">Hide instructions</span></button>
       <div class="hint-content" id="hint-content"></div>
       <div class="statements-header">
-        <span class="statements-title">Ability Statements</span>
-        <span class="statements-count" id="statements-count"></span>
+        <span class="statements-title">What to aim for</span>
+        
       </div>
       <div id="statements-list"></div>
       <div class="reps-row">
@@ -459,7 +481,7 @@ let appState = {
   unlockedExercises:[...SESSION_1_IDS],
   currentExerciseId:null,
   currentLevelKey:null,
-  hintOpen:false,
+  hintOpen:true,
   showActiveOnly:true,
   removeTarget:null
 };
@@ -493,15 +515,30 @@ function saveState(){try{localStorage.setItem('pilates_v4',JSON.stringify(appSta
 function getEx(id){return EXERCISES.find(e=>e.id===id);}
 function getExData(id){return appState.exerciseData[id]||{};}
 function getLevelOrder(ex){return['mod','beg','int','adv'].filter(l=>ex.levels[l]);}
-function isExMastered(exId){return getMasteryPct(exId)===100;}
+function isExMastered(exId){
+  const ex=getEx(exId);const exData=getExData(exId);
+  const mainLevels=getLevelOrder(ex).filter(l=>l!=='mod');
+  if(!mainLevels.length)return false;
+  const lastLevel=mainLevels[mainLevels.length-1];
+  const curLevel=exData.currentLevel||mainLevels[0];
+  if(curLevel!==lastLevel)return false;
+  if(!exData.ringPct)return false;
+  return(exData.ringPct[lastLevel]||0)>=100;
+}
 
 function getMasteryPct(exId){
   const ex=getEx(exId);const exData=getExData(exId);
   const mainLevels=getLevelOrder(ex).filter(l=>l!=='mod');
   if(!mainLevels.length)return 0;
-  let total=0,checked=0;
-  mainLevels.forEach(lk=>{ex.levels[lk].statements.forEach((_,i)=>{total++;if(exData.statements[lk+'_'+i])checked++;});});
-  return total>0?Math.round((checked/total)*100):0;
+  if(!exData.ringPct)exData.ringPct={};
+  const curLevel=exData.currentLevel||mainLevels[0];
+  const curIdx=mainLevels.indexOf(curLevel);
+  let sum=0;
+  mainLevels.forEach((lk,i)=>{
+    if(i<curIdx)sum+=100;
+    else if(i===curIdx)sum+=(exData.ringPct[lk]||0);
+  });
+  return Math.round(sum/mainLevels.length);
 }
 
 function getCurrentLevelChecked(exId,lk){
@@ -530,34 +567,97 @@ function checkUnlocks(){
   return newUnlocks;
 }
 
+const FEELING_DELTA={'struggled':-10,'getting-there':15,'solid':25,'mastered':0};
+
+function getRingPct(exId){
+  const exData=getExData(exId);
+  if(!exData.ringPct)exData.ringPct={};
+  const curLevel=exData.currentLevel||'beg';
+  return Math.min(100,Math.max(0,exData.ringPct[curLevel]||0));
+}
+
+let pendingAdvanceExId=null;
+
 function applyFeeling(exId,feeling){
   const ex=getEx(exId);const exData=getExData(exId);
-  const curLevel=exData.currentLevel;const levelOrder=getLevelOrder(ex);
-  const levelDef=ex.levels[curLevel];if(!levelDef)return;
-  const stmts=levelDef.statements;
-  const unchecked=stmts.map((_,i)=>i).filter(i=>!exData.statements[curLevel+'_'+i]);
-  const checked=stmts.map((_,i)=>i).filter(i=>exData.statements[curLevel+'_'+i]);
-  if(feeling==='struggled'){
-    if(checked.length>0)exData.statements[curLevel+'_'+checked[checked.length-1]]=false;
-    if(curLevel==='beg'&&ex.levels.mod){
-      const newChk=stmts.filter((_,i)=>exData.statements['beg_'+i]).length;
-      if(newChk<Math.ceil(stmts.length/2))exData.currentLevel='mod';
-    }
-  }else if(feeling==='getting-there'){
-    if(unchecked.length>0)exData.statements[curLevel+'_'+unchecked[0]]=true;
-  }else if(feeling==='solid'){
-    unchecked.slice(0,2).forEach(i=>{exData.statements[curLevel+'_'+i]=true;});
-  }else if(feeling==='mastered'){
-    stmts.forEach((_,i)=>{exData.statements[curLevel+'_'+i]=true;});
+  const curLevel=exData.currentLevel||getLevelOrder(ex)[0];
+  if(!exData.ringPct)exData.ringPct={};
+  if(feeling==='mastered'){
+    exData.ringPct[curLevel]=100;
+    showCelebrate(exId);
+  }else{
+    const delta=FEELING_DELTA[feeling]||0;
+    const cur=exData.ringPct[curLevel]||0;
+    exData.ringPct[curLevel]=Math.min(99,Math.max(0,cur+delta));
   }
-  if(stmts.every((_,i)=>exData.statements[curLevel+'_'+i])){
-    const li=levelOrder.indexOf(curLevel);
-    if(li<levelOrder.length-1)exData.currentLevel=levelOrder[li+1];
+}
+
+function showCelebrate(exId){
+  const ex=getEx(exId);const exData=getExData(exId);
+  const curLevel=exData.currentLevel||'beg';
+  const levelOrder=getLevelOrder(ex);
+  const li=levelOrder.indexOf(curLevel);
+  const hasNext=li<levelOrder.length-1;
+  const nextLevel=hasNext?ex.levels[levelOrder[li+1]]:null;
+  pendingAdvanceExId=exId;
+  const messages=["You are absolutely crushing it!","Look at you go — pure dedication!","Your body remembers this now.","That is the Pilates magic right there.","Every session has brought you here."];
+  const msg=messages[Math.floor(Math.random()*messages.length)];
+  document.getElementById('celebrate-emoji').textContent='🌟';
+  document.getElementById('celebrate-title').textContent=ex.name+' — Mastered!';
+  document.getElementById('celebrate-subtitle').textContent=msg;
+  document.getElementById('celebrate-level').textContent=hasNext?'Ready to advance to '+nextLevel.label+'?':'You have reached the highest level for this exercise!';
+  const yesBtn=document.getElementById('celebrate-yes-btn');
+  const noBtn=document.getElementById('celebrate-no-btn');
+  if(!hasNext){
+    yesBtn.textContent='Amazing! 🌿';
+    yesBtn.onclick=()=>{pendingAdvanceExId=null;closeCelebrate();};
+    noBtn.style.display='none';
+  }else{
+    yesBtn.textContent='Yes, advance! 🌿';
+    yesBtn.onclick=confirmAdvance;
+    noBtn.style.display='block';
   }
-  if(exData.currentLevel==='mod'&&ex.levels.beg){
-    const modChk=(ex.levels.mod.statements||[]).filter((_,i)=>exData.statements['mod_'+i]).length;
-    if(modChk>=Math.ceil((ex.levels.mod.statements||[]).length/2))exData.currentLevel='beg';
+  noBtn.onclick=declineAdvance;
+  spawnConfetti();
+  document.getElementById('celebrate-overlay').classList.add('open');
+}
+
+function spawnConfetti(){
+  const container=document.getElementById('confetti-container');
+  container.innerHTML='';
+  const colors=['#C17B5A','#7A8C6E','#E8C4A8','#B8C9A9','#F5F0E8','#8B4A2A'];
+  for(let i=0;i<32;i++){
+    const p=document.createElement('div');
+    p.className='confetti-piece';
+    p.style.cssText='left:'+Math.random()*100+'%;background:'+colors[Math.floor(Math.random()*colors.length)]+';animation-delay:'+Math.random()*0.6+'s;animation-duration:'+(0.8+Math.random()*0.8)+'s;width:'+(6+Math.random()*6)+'px;height:'+(6+Math.random()*6)+'px;border-radius:'+(Math.random()>0.5?'50%':'2px')+';';
+    container.appendChild(p);
   }
+}
+
+function closeCelebrate(){document.getElementById('celebrate-overlay').classList.remove('open');}
+
+function confirmAdvance(){
+  if(!pendingAdvanceExId){closeCelebrate();return;}
+  const ex=getEx(pendingAdvanceExId);const exData=getExData(pendingAdvanceExId);
+  const curLevel=exData.currentLevel||'beg';
+  const levelOrder=getLevelOrder(ex);const li=levelOrder.indexOf(curLevel);
+  if(li<levelOrder.length-1){
+    exData.currentLevel=levelOrder[li+1];
+    if(!exData.ringPct)exData.ringPct={};
+    exData.ringPct[levelOrder[li+1]]=0;
+  }
+  pendingAdvanceExId=null;saveState();closeCelebrate();renderLogBody();
+}
+
+function declineAdvance(){
+  if(pendingAdvanceExId){
+    const exData=getExData(pendingAdvanceExId);
+    const ex=getEx(pendingAdvanceExId);
+    const curLevel=exData.currentLevel||'beg';
+    if(!exData.ringPct)exData.ringPct={};
+    exData.ringPct[curLevel]=95;
+  }
+  pendingAdvanceExId=null;closeCelebrate();
 }
 
 // ===== SECTION NAV =====
@@ -805,13 +905,17 @@ function renderLogBody(){
   }).join('');
 }
 
-function setFeeling(exId,key,fi){logFeelings[exId]=key;renderLogBody();}
+function setFeeling(exId,key,fi){
+  logFeelings[exId]=key;
+  if(key==='mastered'){applyFeeling(exId,'mastered');saveState();}
+  renderLogBody();
+}
 
 function confirmLog(){
   const planExs=getPlanExercises();
   planExs.forEach(ex=>{
     const feeling=logFeelings[ex.id]||'getting-there';
-    if(!isExMastered(ex.id))applyFeeling(ex.id,feeling);
+    if(feeling!=='mastered')applyFeeling(ex.id,feeling);
   });
   const session={date:new Date().toISOString(),exercises:[...appState.sessionCompleted],count:appState.sessionCompleted.length||planExs.length,feelings:{...logFeelings}};
   appState.sessions.unshift(session);
@@ -881,7 +985,7 @@ function renderExCard(ex){
 
 // ===== MODAL =====
 function openModal(exId){
-  appState.currentExerciseId=exId;appState.hintOpen=false;
+  appState.currentExerciseId=exId;appState.hintOpen=true;
   const ex=getEx(exId);const exData=getExData(exId);
   appState.currentLevelKey=exData.currentLevel||getLevelOrder(ex)[0];
   document.getElementById('modal-overlay').classList.add('open');
@@ -898,37 +1002,39 @@ function renderModalContent(){
   document.getElementById('modal-ring-dash').style.strokeDashoffset=188.5-(pct/100)*188.5;
   document.getElementById('modal-ring-pct').textContent=pct+'%';
   document.getElementById('modal-current-level').textContent=levelDef.label;
-  const checked=getCurrentLevelChecked(exId,curLk);
-  const total=levelDef.statements.length;
-  document.getElementById('modal-level-bar').style.width=Math.round((checked/total)*100)+'%';
-  document.getElementById('modal-level-progress').textContent=checked+' of '+total+' statements';
-  const modAlert=document.getElementById('mod-alert');
-  curLk==='mod'&&ex.levels.beg?modAlert.classList.add('show'):modAlert.classList.remove('show');
+  const ringPct=getRingPct(exId);
+  document.getElementById('modal-level-bar').style.width=ringPct+'%';
+  document.getElementById('modal-level-progress').textContent='';
+  document.getElementById('mod-alert').classList.remove('show');
   const levelOrder=getLevelOrder(ex);
   document.getElementById('level-tabs').innerHTML=levelOrder.map(lk=>`<button class="level-tab ${lk===curLk?'active-'+lk:''}" onclick="switchLevel('${lk}')">${ex.levels[lk].label}</button>`).join('');
+  const activeLevel=exData.currentLevel||levelOrder[0];
+  const switchBtn=document.getElementById('switch-level-btn');
+  if(curLk===activeLevel){
+    switchBtn.textContent='Currently practicing this level';
+    switchBtn.className='switch-level-btn current-level';
+  }else{
+    switchBtn.textContent='Switch to '+levelDef.label;
+    switchBtn.className='switch-level-btn';
+  }
   document.getElementById('hint-toggle-label').textContent=appState.hintOpen?'Hide instructions':'Show instructions';
   renderHintContent(ex,curLk);
-  document.getElementById('statements-count').textContent=checked+'/'+total;
-  document.getElementById('statements-list').innerHTML=levelDef.statements.map((stmt,i)=>{
-    const key=curLk+'_'+i;const isChk=exData.statements[key];
-    return `<div class="statement-item" onclick="toggleStatement(${exId},'${key}')">
-      <div class="statement-check ${isChk?'checked':''}"></div>
-      <div class="statement-text ${isChk?'checked':''}">${stmt}</div>
-    </div>`;
-  }).join('');
+  
+  const stmtList = levelDef.statements || [];
+  document.getElementById('statements-list').innerHTML = stmtList.length
+    ? stmtList.map(stmt => `<div class="statement-item" style="cursor:default;padding:0.5rem 4px;display:flex;align-items:flex-start;gap:0.65rem;border-bottom:1px solid var(--border);">
+        <div style="width:6px;height:6px;border-radius:50%;background:var(--terra);flex-shrink:0;margin-top:6px;"></div>
+        <div style="font-size:0.82rem;line-height:1.5;color:var(--text-secondary);">${stmt}</div>
+      </div>`).join('')
+    : '<div style="font-size:0.8rem;color:var(--text-muted);padding:0.5rem 0;">No statements for this level.</div>';
   const repsOvr=exData.repsOverrides?exData.repsOverrides[curLk]:null;
-  document.getElementById('reps-input').value=repsOvr||levelDef.reps;
-  document.getElementById('reps-unit').textContent=levelDef.repsUnit;
+  document.getElementById('reps-input').value=repsOvr||levelDef.reps||'';
+  document.getElementById('reps-unit').textContent=levelDef.repsUnit||'';
   document.getElementById('reps-input').onchange=function(){
     if(!exData.repsOverrides)exData.repsOverrides={};
     exData.repsOverrides[curLk]=parseInt(this.value);saveState();
   };
-  const advNotice=document.getElementById('advance-notice');
-  if(isLevelComplete(exId,curLk)){
-    const li=levelOrder.indexOf(curLk);
-    if(li<levelOrder.length-1){advNotice.classList.add('show');advNotice.textContent='Level complete! Ready to advance to '+ex.levels[levelOrder[li+1]].label;}
-    else{advNotice.classList.add('show');advNotice.textContent='Exercise Mastered! Congratulations! 🌿';}
-  }else advNotice.classList.remove('show');
+  document.getElementById('advance-notice').classList.remove('show');
 }
 
 function renderHintContent(ex,lk){
@@ -1015,6 +1121,29 @@ loadState();
 renderHeader();
 renderSessionPlan();
 document.getElementById('session-date').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+
+function switchToCurrentBrowse(){
+  const exId=appState.currentExerciseId;
+  const exData=getExData(exId);
+  const curBrowse=appState.currentLevelKey;
+  exData.currentLevel=curBrowse;
+  saveState();
+  renderModalContent();
+}
 </script>
+
+<div class="celebrate-overlay" id="celebrate-overlay">
+  <div class="celebrate-box">
+    <div style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:hidden;" id="confetti-container"></div>
+    <span class="celebrate-emoji" id="celebrate-emoji">🌟</span>
+    <div class="celebrate-title" id="celebrate-title">You nailed it!</div>
+    <div class="celebrate-subtitle" id="celebrate-subtitle"></div>
+    <div class="celebrate-level" id="celebrate-level"></div>
+    <div class="celebrate-actions">
+      <button class="celebrate-yes" id="celebrate-yes-btn">Yes, advance! 🌿</button>
+      <button class="celebrate-no" id="celebrate-no-btn">Not quite yet</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
